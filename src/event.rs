@@ -1,21 +1,19 @@
-use color_eyre::eyre::OptionExt;
 use crossterm::event::Event as CrosstermEvent;
+use displaydoc::Display;
+use error_stack::{IntoReport, Report};
 use futures::{FutureExt, StreamExt};
-use std::time::Duration;
 use tokio::sync::mpsc;
+use tracing::{Instrument, debug, trace};
 
-/// The frequency at which tick events are emitted.
-const TICK_FPS: f64 = 30.0;
+use crate::{
+    features::{FeaturesList, FetchFeaturesError},
+    manifest::dependency::DependencyCursor,
+    updater::{CheckForUpdateError, UpdateStatus, VersionType},
+};
 
 /// Representation of all possible events.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum Event {
-    /// An event that is emitted on a regular schedule.
-    ///
-    /// Use this event to run any code which has to run outside of being a direct response to a user
-    /// event. e.g. polling exernal systems, updating animations, or rendering the UI based on a
-    /// fixed frame rate.
-    Tick,
     /// Crossterm events.
     ///
     /// These events are emitted by the terminal.
@@ -29,14 +27,38 @@ pub enum Event {
 /// Application events.
 ///
 /// You can extend this enum with your own custom events.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum AppEvent {
-    /// Increment the counter.
-    Increment,
-    /// Decrement the counter.
-    Decrement,
-    /// Quit the application.
-    Quit,
+    /// Queue an check for a dependency.
+    UpdateCheck { cursor: DependencyCursor },
+
+    /// Result of an update check for a dependency.
+    UpdateCheckResult {
+        cursor: DependencyCursor,
+        result: UpdateStatus,
+    },
+
+    /// Queue an update for a dependency.
+    UpdateDependency {
+        cursor: DependencyCursor,
+        version: VersionType,
+    },
+
+    /// Load the versions of a dependency in the main view.
+    LoadDependencyVersions(DependencyCursor),
+
+    /// Load the features of a dependency in the main view.
+    LoadDependencyFeatures(DependencyCursor),
+
+    /// Update the versions of a dependency in the main view.
+    UpdateDependencyVersions {
+        versions: Result<Vec<VersionType>, Report<CheckForUpdateError>>,
+    },
+
+    /// Update the features of a dependency in the main view.
+    UpdateDependencyFeatures {
+        features: Result<FeaturesList, Report<FetchFeaturesError>>,
+    },
 }
 
 /// Terminal event handler.
@@ -48,12 +70,18 @@ pub struct EventHandler {
     receiver: mpsc::UnboundedReceiver<Event>,
 }
 
+#[derive(Debug, thiserror::Error, Display)]
+pub enum Error {
+    /// Failed to receive an event from the sender.
+    RecvFail,
+}
+
 impl EventHandler {
     /// Constructs a new instance of [`EventHandler`] and spawns a new thread to handle events.
     pub fn new() -> Self {
         let (sender, receiver) = mpsc::unbounded_channel();
         let actor = EventTask::new(sender.clone());
-        tokio::spawn(async { actor.run().await });
+        tokio::spawn(async { actor.run().await }.in_current_span());
         Self { sender, receiver }
     }
 
@@ -66,59 +94,60 @@ impl EventHandler {
     /// This function returns an error if the sender channel is disconnected. This can happen if an
     /// error occurs in the event thread. In practice, this should not happen unless there is a
     /// problem with the underlying terminal.
-    pub async fn next(&mut self) -> color_eyre::Result<Event> {
+    pub async fn next(&mut self) -> Result<Event, Report<Error>> {
         self.receiver
             .recv()
             .await
-            .ok_or_eyre("Failed to receive event")
+            .ok_or_else(|| Error::RecvFail.into_report())
     }
 
     /// Queue an app event to be sent to the event receiver.
     ///
     /// This is useful for sending events to the event handler which will be processed by the next
     /// iteration of the application's event loop.
-    pub fn send(&mut self, app_event: AppEvent) {
+    pub fn send(&self, app_event: AppEvent) {
         // Ignore the result as the reciever cannot be dropped while this struct still has a
         // reference to it
         let _ = self.sender.send(Event::App(app_event));
     }
+
+    pub const fn sender(&self) -> &mpsc::UnboundedSender<Event> {
+        &self.sender
+    }
 }
 
-/// A thread that handles reading crossterm events and emitting tick events on a regular schedule.
+/// A thread that handles reading crossterm events.
 struct EventTask {
     /// Event sender channel.
     sender: mpsc::UnboundedSender<Event>,
 }
 
 impl EventTask {
-    /// Constructs a new instance of [`EventThread`].
-    fn new(sender: mpsc::UnboundedSender<Event>) -> Self {
+    /// Constructs a new instance of [`EventTask`].
+    const fn new(sender: mpsc::UnboundedSender<Event>) -> Self {
         Self { sender }
     }
 
     /// Runs the event thread.
     ///
-    /// This function emits tick events at a fixed rate and polls for crossterm events in between.
-    async fn run(self) -> color_eyre::Result<()> {
-        let tick_rate = Duration::from_secs_f64(1.0 / TICK_FPS);
+    /// This function polls for crossterm events in between.
+    #[tracing::instrument(skip(self))]
+    async fn run(self) {
         let mut reader = crossterm::event::EventStream::new();
-        let mut tick = tokio::time::interval(tick_rate);
+
         loop {
-            let tick_delay = tick.tick();
             let crossterm_event = reader.next().fuse();
             tokio::select! {
-              _ = self.sender.closed() => {
+              () = self.sender.closed() => {
+                debug!("Loop terminated");
                 break;
               }
-              _ = tick_delay => {
-                self.send(Event::Tick);
-              }
               Some(Ok(evt)) = crossterm_event => {
+                trace!(evt = ?evt, "New crossterm event");
                 self.send(Event::Crossterm(evt));
               }
             };
         }
-        Ok(())
     }
 
     /// Sends an event to the receiver.

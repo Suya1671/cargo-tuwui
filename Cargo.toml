@@ -3,19 +3,50 @@ name = "cargo-tuwui"
 version = "0.1.0"
 description = "A TUI for editing cargo manifest (Cargo.toml) files"
 authors = ["Suya Singh <suya1671@tuta.io>"]
+homepage = "https://github.com/suya1671/cargo-tuwui"
 license = "MIT"
 edition = "2024"
 
 [dependencies]
-crossterm = { version = "0.28.1", features = ["event-stream"] }
-futures = "0.3.31"
+ansi-to-tui = "8.0.1"
+better-panic = "0.3.0"
+cargo_metadata = "0.23.1"
+config = "0.15.23"
+crossterm = {
+  version = "0.29.0",
+  default-features = true,
+  features = ["event-stream"]
+}
+derive_more = { version = "2.1.1", features = ["from"] }
+directories = "6.0.0"
+displaydoc = "0.2.6"
+error-stack = { version = "0.7.1", features = ["eyre", "spantrace", "tracing"] }
+futures = "0.3.32"
+has-nerd-font = "0.20260228.0"
+human-panic = "2.0.8"
+indoc = "2.0.7"
+itertools = "0.14.0"
 ratatui = "0.30.0"
-tokio = { version = "1.40.0", features = ["full"] }
-color-eyre = "0.6.3"
+ratatui-input-manager = {
+  version = "0.4.0",
+  features = ["crossterm", "widgets"]
+}
+reqwest = { version = "0.13.4", features = ["json"] }
+semver = { version = "1.0.28", features = ["serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "2.0.18"
+tokio = {
+  version = "1.52.2",
+  features = ["macros", "rt-multi-thread", "sync", "time", "tracing"]
+}
+toml_edit = "0.24"
+tracing = "0.1.44"
+tracing-error = "0.2.1"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 # Read the optimization guideline for more details: https://ratatui.rs/recipes/apps/release-your-app/#optimizations
 [profile.release]
-codegen-units = 1
-lto = true
-opt-level = "s"
+opt-level = 3
 strip = true
+lto = true
+codegen-units = 1
