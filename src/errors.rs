@@ -1,6 +1,8 @@
-use indoc::indoc;
+use std::path::PathBuf;
 
-pub fn init() {
+use indoc::formatdoc;
+
+pub fn init(logging_path: PathBuf) {
     std::panic::set_hook(Box::new(move |panic_info| {
         ratatui::restore();
 
@@ -12,17 +14,19 @@ pub fn init() {
             .create_panic_handler()(panic_info);
 
         // user-facing new-to-rust error
-        let metadata = human_panic::metadata!().support(indoc! {"
+        let metadata = human_panic::metadata!().support(formatdoc! {"
             - Please report an issue to the repository.
             - If you understand rust, scroll up to find the full stack trace and see if anything relevant comes up and include it.
+            - You can find any logs in the following directory: {}
+                - If you're trying to reproduce the error, you can set `TUWUI_LOG=debug` or `TUWUI_LOG=trace` to get more detailed logs, which may be helpful for debugging.
             - Include what you were doing when the error occurred.
-        "});
+        ", logging_path.display()});
         let file_path = human_panic::handle_dump(&metadata, panic_info);
 
         human_panic::print_msg(file_path, &metadata)
             .expect("human-panic: printing error message to console failed");
 
-        std::process::exit(1);
+        std::process::abort();
     }));
 }
 

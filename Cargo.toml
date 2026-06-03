@@ -1,6 +1,6 @@
 [package]
 name = "cargo-tuwui"
-version = "0.1.2"
+version = "0.2.0"
 description = "A TUI for editing cargo manifest (Cargo.toml) files"
 authors = ["Suya Singh <suya1671@tuta.io>"]
 homepage = "https://github.com/suya1671/cargo-tuwui"

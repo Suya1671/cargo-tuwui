@@ -4,16 +4,22 @@ use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, HorizontalAlignment, Rect},
+    macros::horizontal,
     style::Style,
     text::{Line, Span, Text},
-    widgets::{Block, Cell, Row, Table, Widget},
+    widgets::{Block, Cell, Paragraph, Row, Table, Widget},
 };
 use ratatui_input_manager::{Backend, KeyBind, KeyMap, KeyPress};
 
 use crate::app::App;
 
+const HELP_TIP: &str = " | Press '?' to view all keybinds";
+
 impl App {
     pub fn render_help_area(&self, area: Rect, buffer: &mut Buffer) {
+        #[allow(clippy::cast_possible_truncation)]
+        let [help_bar_area, tip_area] = horizontal![>= 1, == HELP_TIP.len() as u16].areas(area);
+
         let keybinds = self
             .get_area_subkeybinds()
             .iter()
@@ -21,7 +27,11 @@ impl App {
             .collect::<Vec<_>>();
 
         let help = HelpBar::new(keybinds);
-        help.render(area, buffer);
+        help.render(help_bar_area, buffer);
+
+        Paragraph::new(HELP_TIP)
+            .style(Style::default().fg(ratatui::style::Color::DarkGray))
+            .render(tip_area, buffer);
     }
 }
 
@@ -42,7 +52,7 @@ impl<'k, B: Backend> Help<'k, B> {
             keybinds: keybinds.into_iter().collect(),
             block: None,
             style: Style::default(),
-            key_style: Style::default(),
+            key_style: Style::default().bold().white(),
             description_style: Style::default(),
         }
     }
@@ -156,9 +166,9 @@ impl<'k, B: Backend> HelpBar<'k, B> {
         Self {
             keybinds: keybinds.into_iter().collect(),
             style: Style::default(),
-            key_style: Style::default(),
+            key_style: Style::default().bold().white(),
             description_style: Style::default(),
-            separator_style: Style::default(),
+            separator_style: Style::default().fg(ratatui::style::Color::DarkGray),
         }
     }
 }

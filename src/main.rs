@@ -30,8 +30,8 @@ pub enum Error {
 
 #[tokio::main]
 async fn main() -> Result<(), Report<Error>> {
-    errors::init();
     let config = config::Config::new()?;
+    errors::init(config.logging_path.clone());
 
     logging::init(&config)?;
 
