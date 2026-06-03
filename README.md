@@ -4,7 +4,10 @@ A [Ratatui] TUI to manage your Cargo.toml
 
 [Ratatui]: https://ratatui.rs
 
-[Hey note to future suya add in pictures]
+## Images
+![Example of cargo-tuwui in action](./assets/base-ui.png)
+![Example of updating a dependency](./assets/update.png)
+![Example of enabling a feature](./assets/feature-enable.png)
 
 ## Installation
 
@@ -16,6 +19,14 @@ cargo install cargo-tuwui
 ### From git
 ```sh
 cargo install --git https://github.com/Suya1671/cargo-tuwui
+```
+
+## Usage
+
+In your project where the Cargo.toml file is:
+
+```sh
+cargo tuwui
 ```
 
 ## Limitations
