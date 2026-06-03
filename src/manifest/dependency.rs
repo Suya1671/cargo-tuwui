@@ -56,7 +56,7 @@ pub struct DependencyRef<'a> {
     // features should be gotten from the manifest method due to allocation if we wanted to embed it in here
 }
 impl<'a> DependencyRef<'a> {
-    #[tracing::instrument]
+    #[tracing::instrument(skip(item), fields(item = %item))]
     pub fn from_item(name: &'a str, item: &'a Item) -> Result<Self, Report<DependencyParseError>> {
         let source = match item {
             Item::Value(Value::String(version)) => {
@@ -340,9 +340,9 @@ impl Display for RegistrySource {
 }
 
 impl<'a> Source<'a> {
-    #[tracing::instrument(fields(version))]
+    #[tracing::instrument(skip(table), fields(table= %table, version))]
     pub fn try_from_table(
-        table: &'a (impl TableLike + fmt::Debug),
+        table: &'a (impl TableLike + fmt::Display),
     ) -> Result<Self, Report<DependencyParseError>> {
         // TODO: handle version + other fields existing at the same time, and thus ignore version
         // I think the easiest way is to make version the final check/fallback if git/path/etc doesn't exist

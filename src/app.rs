@@ -125,7 +125,7 @@ impl App {
     }
 
     /// Run the application's main loop.
-    pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<(), Report<AppError>> {
+    pub async fn run(mut self, terminal: &mut DefaultTerminal) -> Result<(), Report<AppError>> {
         while self.running {
             terminal
                 .draw(|frame| frame.render_widget(self.create_widget(), frame.area()))

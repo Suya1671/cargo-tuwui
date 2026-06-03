@@ -1,6 +1,6 @@
 [package]
 name = "cargo-tuwui"
-version = "0.1.1"
+version = "0.1.2"
 description = "A TUI for editing cargo manifest (Cargo.toml) files"
 authors = ["Suya Singh <suya1671@tuta.io>"]
 homepage = "https://github.com/suya1671/cargo-tuwui"
@@ -25,7 +25,7 @@ futures = "0.3.32"
 has-nerd-font = "0.20260228.0"
 human-panic = "2.0.8"
 indoc = "2.0.7"
-itertools = "0.14.0"
+itertools = { version = "0.14.0", features = [] }
 ratatui = "0.30.0"
 ratatui-input-manager = {
   version = "0.4.0",

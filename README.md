@@ -4,6 +4,20 @@ A [Ratatui] TUI to manage your Cargo.toml
 
 [Ratatui]: https://ratatui.rs
 
+[Hey note to future suya add in pictures]
+
+## Installation
+
+### Latest version
+```sh
+cargo install cargo-tuwui
+```
+
+### From git
+```sh
+cargo install --git https://github.com/Suya1671/cargo-tuwui
+```
+
 ## Limitations
 - Only works with the official [crates.io] registry for now
   - It _will_ crash if you have any git or path dependencies. Sorry! WIP moment

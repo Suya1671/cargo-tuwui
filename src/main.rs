@@ -5,7 +5,7 @@ use displaydoc::Display;
 use error_stack::{FutureExt, Report, ResultExt};
 use thiserror::Error;
 
-use crate::app::App;
+use crate::{app::App, terminal::TerminalGuard};
 
 mod app;
 mod config;
@@ -15,6 +15,7 @@ mod features;
 mod keybinds;
 mod logging;
 mod manifest;
+mod terminal;
 mod ui;
 mod updater;
 
@@ -34,7 +35,7 @@ async fn main() -> Result<(), Report<Error>> {
 
     logging::init(&config)?;
 
-    let terminal = ratatui::init();
+    let mut terminal = TerminalGuard::new();
 
     let current_dir = std::env::current_dir()
         .attach("Failed to get current directory")
@@ -50,9 +51,5 @@ async fn main() -> Result<(), Report<Error>> {
         .attach("Failed to queue check for updates")
         .change_context(Error::Init)?;
 
-    let result = app.run(terminal).change_context(Error::Run).await;
-
-    ratatui::restore();
-
-    result
+    app.run(&mut terminal).change_context(Error::Run).await
 }
