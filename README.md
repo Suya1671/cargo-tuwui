@@ -1,3 +1,13 @@
+> [!IMPORTANT]
+> **This project has moved.**
+>
+> Development now happens at:
+>
+> **https://tangled.org/wobbl.in/cargo-tuwui**
+>
+> This GitHub repository is no longer maintained and thus archived. Please update your bookmarks and use the new location for the latest source code, documentation, issue tracking, and releases.
+
+
 # cargo-tuwui
 
 A [Ratatui] TUI to manage your Cargo.toml
